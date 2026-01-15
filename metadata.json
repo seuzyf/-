@@ -1,0 +1,5 @@
+{
+  "name": "Mystic Tarot AI",
+  "description": "An immersive 3D Tarot reading experience powered by Gemini AI. Draw cards representing your Past, Present, and Future.",
+  "requestFramePermissions": []
+}

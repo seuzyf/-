@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 塔罗占卜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap');
+      
+      body {
+        font-family: 'Noto Serif SC', serif;
+        background-color: #0f172a;
+        color: #fef3c7;
+        overflow: hidden; /* Prevent native scroll interaction with deck */
+      }
+      
+      .font-cinzel {
+        font-family: 'Cinzel Decorative', cursive;
+      }
+
+      /* Custom scrollbar for result panel */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #1e293b; 
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #78350f; 
+        border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #92400e; 
+      }
+
+      /* 3D Context */
+      .scene {
+        perspective: 1200px;
+        transform-style: preserve-3d;
+      }
+
+      /* Animations */
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-50px) scale(0.8); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      .animate-slide-in {
+        animation: slideIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.36.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
