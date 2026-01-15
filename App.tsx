@@ -61,11 +61,11 @@ const App: React.FC = () => {
       ...card,
       position: currentPosition,
       isReversed,
-      isRevealed: false
+      isRevealed: false // Ensure it stays face down initially
     };
 
     setSelectedCards([...selectedCards, newSelectedCard]);
-    audioManager.playDraw(); // Playing a sound when picking creates feedback
+    audioManager.playDraw();
 
     if (selectedCards.length + 1 === 3) {
       // Once 3 cards are picked, retract deck automatically to clean up view
@@ -81,50 +81,46 @@ const App: React.FC = () => {
     const readingPromise = getTarotReading(question, selectedCards);
 
     // 2. Sequential Flip Animation
-    // We utilize setTimeout to flip them one by one
-    const FLIP_INTERVAL = 1500; // 1.5s between flips
+    // We create a sequence where each card glows then flips
+    
+    // Time constants
+    const START_DELAY = 500;
+    const FLIP_DURATION = 2000; // Duration of the visual flip
+    const INTERVAL = 2500; // Time between starting next card's flip sequence
 
-    // Flip 1: Past
-    setTimeout(() => {
-      audioManager.playFlip();
+    // Function to flip a specific index
+    const flipCard = (index: number) => {
       setSelectedCards(prev => {
         const next = [...prev];
-        if(next[0]) next[0].isRevealed = true;
+        if (next[index]) {
+            next[index].isRevealed = true;
+        }
         return next;
       });
-    }, 500);
+      audioManager.playFlip(); // Sound effect
+    };
 
-    // Flip 2: Present
-    setTimeout(() => {
-      audioManager.playFlip();
-      setSelectedCards(prev => {
-        const next = [...prev];
-        if(next[1]) next[1].isRevealed = true;
-        return next;
-      });
-    }, 500 + FLIP_INTERVAL);
-
-    // Flip 3: Future
-    setTimeout(() => {
-      audioManager.playFlip();
-      setSelectedCards(prev => {
-        const next = [...prev];
-        if(next[2]) next[2].isRevealed = true;
-        return next;
-      });
-    }, 500 + FLIP_INTERVAL * 2);
+    // Schedule flips
+    setTimeout(() => flipCard(0), START_DELAY);
+    setTimeout(() => flipCard(1), START_DELAY + INTERVAL);
+    setTimeout(() => flipCard(2), START_DELAY + INTERVAL * 2);
 
     // 3. Wait for both animation and AI to finish before showing text
-    const MIN_WAIT_TIME = 500 + FLIP_INTERVAL * 3 + 1000; // Total time for animations + 1s buffer
+    // The total animation time covers 3 intervals. We want to ensure the last flip is fully enjoyed before text appears.
+    const ANIMATION_TOTAL_TIME = START_DELAY + INTERVAL * 2 + FLIP_DURATION; 
 
     const [result] = await Promise.all([
       readingPromise,
-      new Promise(resolve => setTimeout(resolve, MIN_WAIT_TIME))
+      new Promise(resolve => setTimeout(resolve, ANIMATION_TOTAL_TIME))
     ]);
 
+    // Transition to reading view
     setAiReading(result);
     setLoadingReading(false);
     setIsRevealing(false);
+    
+    // Play a "success" sound when reading appears
+    audioManager.playReveal();
     setGameState('reading');
   };
 
@@ -146,7 +142,7 @@ const App: React.FC = () => {
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900 via-slate-950 to-black"></div>
 
       {/* Header */}
-      <header className="z-20 w-full p-4 md:p-6 flex justify-between items-center border-b border-amber-900/30 bg-slate-900/50 backdrop-blur-sm flex-none h-20">
+      <header className="z-20 w-full p-4 md:p-6 flex justify-between items-center border-b border-amber-900/30 bg-slate-900/50 backdrop-blur-sm flex-none h-16 md:h-20">
         <h1 className="text-xl md:text-3xl font-cinzel text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600">
           <SparklesIcon /> 
           Mystic Tarot
@@ -188,10 +184,11 @@ const App: React.FC = () => {
 
         {/* SHUFFLING / PICKING PHASE / REVEALING PHASE */}
         {(gameState === 'shuffling' || gameState === 'picking') && (
-          <div className="w-full h-full flex flex-col">
+          <div className="w-full h-full flex flex-col items-center justify-between">
             
             {/* Top: Deck Area (Flexible Space) */}
-            <div className={`relative flex-grow flex items-center justify-center transition-all duration-1000 ${isRevealing ? 'opacity-0 scale-90 translate-y-[-100px]' : 'opacity-100'}`}>
+            {/* Using flex-grow with explicit min-height prevents overlap by forcing the container to take available space but respect bottom element */}
+            <div className={`relative flex-grow w-full flex items-center justify-center transition-all duration-1000 ${isRevealing ? 'opacity-0 scale-90 translate-y-[-100px]' : 'opacity-100'}`}>
                {gameState === 'shuffling' ? (
                    <div className="text-amber-200 animate-pulse text-2xl font-cinzel">洗牌中 / Shuffling...</div>
                ) : (
@@ -205,8 +202,8 @@ const App: React.FC = () => {
                )}
             </div>
 
-            {/* Bottom: Hand Area (Fixed Height or Auto) */}
-            <div className="flex-none w-full">
+            {/* Bottom: Hand Area (Fixed or Content-based Height) */}
+            <div className="flex-none w-full z-10">
               <SelectedCardsDisplay 
                  cards={selectedCards} 
                  onReveal={handleReveal} 
@@ -219,10 +216,10 @@ const App: React.FC = () => {
 
         {/* READING RESULT PHASE */}
         {gameState === 'reading' && (
-          <div className="w-full h-full flex flex-col lg:flex-row gap-8 items-center justify-center pt-4 pb-8 animate-slide-in">
+          <div className="w-full h-full flex flex-col lg:flex-row gap-6 items-center justify-center pt-2 pb-8 animate-slide-in">
              
              {/* Left: The Cards (Display Mode) */}
-             <div className="w-full lg:w-1/3 flex flex-col items-center">
+             <div className="w-full lg:w-1/3 flex flex-col items-center transform scale-90 lg:scale-100">
                 <SelectedCardsDisplay 
                   cards={selectedCards} 
                   onReveal={() => {}} 
@@ -232,7 +229,7 @@ const App: React.FC = () => {
              </div>
 
              {/* Right: The Interpretation */}
-             <div className="w-full lg:w-2/3 h-full max-h-[80vh] p-6 bg-slate-900/90 border border-amber-700/50 rounded-lg shadow-2xl backdrop-blur-md flex flex-col">
+             <div className="w-full lg:w-2/3 h-full max-h-[75vh] p-6 bg-slate-900/90 border border-amber-700/50 rounded-lg shadow-2xl backdrop-blur-md flex flex-col">
                 <h3 className="text-xl font-cinzel text-amber-400 mb-4 border-b border-amber-900 pb-2 flex-none">命运启示 / Divine Guidance</h3>
                 
                 <div className="flex-grow overflow-y-auto custom-scrollbar pr-2">
@@ -243,7 +240,7 @@ const App: React.FC = () => {
                         </div>
                     ) : (
                         <div className="prose prose-invert prose-amber max-w-none">
-                            <div className="whitespace-pre-wrap leading-relaxed text-amber-100/90 font-serif text-base md:text-lg">
+                            <div className="whitespace-pre-wrap leading-relaxed text-amber-100/90 font-serif text-base">
                                 {aiReading.split('\n').map((line, i) => {
                                     if (line.startsWith('#') || line.startsWith('**')) {
                                         return <p key={i} className="font-bold text-amber-400 mt-6 mb-3 border-l-2 border-amber-600 pl-3">{line.replace(/#/g, '').replace(/\*\*/g, '')}</p>
